@@ -10,6 +10,7 @@ import (
 func Sync(src, dst redis.Conn) (err error) {
 	keys, _ := redis.Strings(src.Do("KEYS", "*"))
 
+	// Begin transaction
 	err = dst.Send("MULTI")
 	if err != nil {
 		return err
@@ -27,35 +28,41 @@ func Sync(src, dst redis.Conn) (err error) {
 		case "STRING":
 			err = copyString(key, src, dst)
 			if err != nil {
-				return err
+				break
 			}
 		case "LIST":
 			err = copyList(key, src, dst)
 			if err != nil {
-				return err
+				break
 			}
 		case "SET":
 			err = copySet(key, src, dst)
 			if err != nil {
-				return err
+				break
 			}
 		case "ZSET":
 			err = copySortedSet(key, src, dst)
 			if err != nil {
-				return err
+				break
 			}
 		case "HASH":
 			err = copyHash(key, src, dst)
 			if err != nil {
-				return err
+				break
 			}
 		default:
-			return fmt.Errorf("Unknown TYPE: '%s' for KEY '%s'\n", t, key)
+			err = fmt.Errorf("Unknown TYPE: '%s' for KEY '%s'\n", t, key)
 		}
 	}
+	if err != nil {
+		dst.Do("DISCARD")
+		return err
+	}
 
+	// Commit
 	_, err = dst.Do("EXEC")
 	if err != nil {
+		dst.Do("DISCARD")
 		return err
 	}
 
