@@ -111,7 +111,7 @@ func copySet(key string, src redis.Conn, dst redis.Conn) (err error) {
 }
 
 func copySortedSet(key string, src redis.Conn, dst redis.Conn) (err error) {
-	sortedSet, _ := redis.Values(src.Do("ZRANGE", key, 0, -1, "WITHSCORES"))
+	sortedSet, err := redis.Values(src.Do("ZRANGE", key, 0, -1, "WITHSCORES"))
 	if err != nil {
 		return err
 	}
