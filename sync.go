@@ -52,6 +52,30 @@ func Sync(src, dst redis.Conn) (err error) {
 	return nil
 }
 
+func prepend(key string, args []interface{}) []interface{} {
+	keysAndArgs := make([]interface{}, len(args)+1)
+
+	keysAndArgs[0] = key
+	for i := range args {
+		keysAndArgs[i+1] = args[i]
+	}
+
+	return keysAndArgs
+}
+
+// Only for Sorted Sets due to sequence of arguments for scores
+func reverse(args []interface{}) []interface{} {
+	reversed := make([]interface{}, len(args))
+
+	j := 0
+	for i := len(args) - 1; i >= 0; i-- {
+		reversed[j] = args[i]
+		j++
+	}
+
+	return reversed
+}
+
 func copyString(key string, src redis.Conn, dst redis.Conn) (err error) {
 	value, err := src.Do("GET", key)
 	if err != nil {
@@ -73,13 +97,8 @@ func copyList(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	dst.Send("MULTI")
-	for _, elem := range list {
-		err = dst.Send("RPUSH", key, elem)
-		if err != nil {
-			return err
-		}
-	}
-
+	args := prepend(key, list)
+	dst.Send("RPUSH", args...)
 	_, err = dst.Do("EXEC")
 	if err != nil {
 		return err
@@ -95,13 +114,8 @@ func copySet(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	dst.Send("MULTI")
-	for _, member := range set {
-		err = dst.Send("SADD", key, member)
-		if err != nil {
-			return err
-		}
-	}
-
+	args := prepend(key, set)
+	dst.Send("SADD", args...)
 	_, err = dst.Do("EXEC")
 	if err != nil {
 		return err
@@ -117,15 +131,8 @@ func copySortedSet(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	dst.Send("MULTI")
-	for i, member := range sortedSet {
-		if i%2 == 0 {
-			err = dst.Send("ZADD", key, sortedSet[i+1], member)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
+	args := prepend(key, reverse(sortedSet))
+	dst.Send("ZADD", args...)
 	_, err = dst.Do("EXEC")
 	if err != nil {
 		return err
@@ -141,15 +148,8 @@ func copyHash(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	dst.Send("MULTI")
-	for i, hashKey := range hash {
-		if i%2 == 0 {
-			err = dst.Send("HSET", key, hashKey, hash[i+1])
-			if err != nil {
-				return err
-			}
-		}
-	}
-
+	args := prepend(key, hash)
+	dst.Send("HMSET", args...)
 	_, err = dst.Do("EXEC")
 	if err != nil {
 		return err
