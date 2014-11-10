@@ -15,6 +15,7 @@ func Sync(src, dst redis.Conn) (err error) {
 	if err != nil {
 		return err
 	}
+	defer dst.Do("DISCARD")
 
 	for _, key := range keys {
 		fmt.Printf("-----> %s\n", key)
@@ -28,41 +29,36 @@ func Sync(src, dst redis.Conn) (err error) {
 		case "STRING":
 			err = copyString(key, src, dst)
 			if err != nil {
-				break
+				return err
 			}
 		case "LIST":
 			err = copyList(key, src, dst)
 			if err != nil {
-				break
+				return err
 			}
 		case "SET":
 			err = copySet(key, src, dst)
 			if err != nil {
-				break
+				return err
 			}
 		case "ZSET":
 			err = copySortedSet(key, src, dst)
 			if err != nil {
-				break
+				return err
 			}
 		case "HASH":
 			err = copyHash(key, src, dst)
 			if err != nil {
-				break
+				return err
 			}
 		default:
-			err = fmt.Errorf("Unknown TYPE: '%s' for KEY '%s'\n", t, key)
+			return fmt.Errorf("Unknown TYPE: '%s' for KEY '%s'\n", t, key)
 		}
-	}
-	if err != nil {
-		dst.Do("DISCARD")
-		return err
 	}
 
 	// Commit
 	_, err = dst.Do("EXEC")
 	if err != nil {
-		dst.Do("DISCARD")
 		return err
 	}
 
