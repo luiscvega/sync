@@ -10,6 +10,11 @@ import (
 func Sync(src, dst redis.Conn) (err error) {
 	keys, _ := redis.Strings(src.Do("KEYS", "*"))
 
+	err = dst.Send("MULTI")
+	if err != nil {
+		return err
+	}
+
 	for _, key := range keys {
 		fmt.Printf("-----> %s\n", key)
 
@@ -49,6 +54,11 @@ func Sync(src, dst redis.Conn) (err error) {
 		}
 	}
 
+	_, err = dst.Do("EXEC")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -82,7 +92,7 @@ func copyString(key string, src redis.Conn, dst redis.Conn) (err error) {
 		return err
 	}
 
-	_, err = dst.Do("SET", key, value)
+	err = dst.Send("SET", key, value)
 	if err != nil {
 		return err
 	}
@@ -97,7 +107,7 @@ func copyList(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	args := prepend(key, list)
-	_, err = dst.Do("RPUSH", args...)
+	err = dst.Send("RPUSH", args...)
 	if err != nil {
 		return err
 	}
@@ -112,7 +122,7 @@ func copySet(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	args := prepend(key, set)
-	_, err = dst.Do("SADD", args...)
+	err = dst.Send("SADD", args...)
 	if err != nil {
 		return err
 	}
@@ -127,7 +137,7 @@ func copySortedSet(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	args := prepend(key, reverse(sortedSet))
-	_, err = dst.Do("ZADD", args...)
+	err = dst.Send("ZADD", args...)
 	if err != nil {
 		return err
 	}
@@ -142,7 +152,7 @@ func copyHash(key string, src redis.Conn, dst redis.Conn) (err error) {
 	}
 
 	args := prepend(key, hash)
-	_, err = dst.Do("HMSET", args...)
+	err = dst.Send("HMSET", args...)
 	if err != nil {
 		return err
 	}
