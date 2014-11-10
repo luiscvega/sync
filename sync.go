@@ -50,7 +50,7 @@ func Sync(src, dst redis.Conn) (err error) {
 				return err
 			}
 		default:
-			fmt.Printf("Unknown TYPE: '%s' for KEY '%s'\n", t, key)
+			return fmt.Errorf("Unknown TYPE: '%s' for KEY '%s'\n", t, key)
 		}
 	}
 
