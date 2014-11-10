@@ -9,7 +9,7 @@ import (
 )
 
 func flushThenClose(conn redis.Conn) {
-	conn.Do("FLUSHALL")
+	conn.Do("FLUSHDB")
 	conn.Close()
 }
 
