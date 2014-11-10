@@ -53,14 +53,14 @@ func Sync(src, dst redis.Conn) (err error) {
 }
 
 func prepend(key string, args []interface{}) []interface{} {
-	keysAndArgs := make([]interface{}, len(args)+1)
+	keyAndArgs := make([]interface{}, len(args)+1)
 
-	keysAndArgs[0] = key
+	keyAndArgs[0] = key
 	for i := range args {
-		keysAndArgs[i+1] = args[i]
+		keyAndArgs[i+1] = args[i]
 	}
 
-	return keysAndArgs
+	return keyAndArgs
 }
 
 // Only for Sorted Sets due to sequence of arguments for scores
@@ -96,10 +96,8 @@ func copyList(key string, src redis.Conn, dst redis.Conn) (err error) {
 		return err
 	}
 
-	dst.Send("MULTI")
 	args := prepend(key, list)
-	dst.Send("RPUSH", args...)
-	_, err = dst.Do("EXEC")
+	_, err = dst.Do("RPUSH", args...)
 	if err != nil {
 		return err
 	}
@@ -113,10 +111,8 @@ func copySet(key string, src redis.Conn, dst redis.Conn) (err error) {
 		return err
 	}
 
-	dst.Send("MULTI")
 	args := prepend(key, set)
-	dst.Send("SADD", args...)
-	_, err = dst.Do("EXEC")
+	_, err = dst.Do("SADD", args...)
 	if err != nil {
 		return err
 	}
@@ -130,10 +126,8 @@ func copySortedSet(key string, src redis.Conn, dst redis.Conn) (err error) {
 		return err
 	}
 
-	dst.Send("MULTI")
 	args := prepend(key, reverse(sortedSet))
-	dst.Send("ZADD", args...)
-	_, err = dst.Do("EXEC")
+	_, err = dst.Do("ZADD", args...)
 	if err != nil {
 		return err
 	}
@@ -147,10 +141,8 @@ func copyHash(key string, src redis.Conn, dst redis.Conn) (err error) {
 		return err
 	}
 
-	dst.Send("MULTI")
 	args := prepend(key, hash)
-	dst.Send("HMSET", args...)
-	_, err = dst.Do("EXEC")
+	_, err = dst.Do("HMSET", args...)
 	if err != nil {
 		return err
 	}
