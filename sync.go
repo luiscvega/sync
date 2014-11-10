@@ -2,6 +2,7 @@ package sync
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -17,28 +18,28 @@ func Sync(src, dst redis.Conn) (err error) {
 			return err
 		}
 
-		switch t {
-		case "string":
+		switch strings.ToUpper(t) {
+		case "STRING":
 			err = copyString(key, src, dst)
 			if err != nil {
 				return err
 			}
-		case "list":
+		case "LIST":
 			err = copyList(key, src, dst)
 			if err != nil {
 				return err
 			}
-		case "set":
+		case "SET":
 			err = copySet(key, src, dst)
 			if err != nil {
 				return err
 			}
-		case "zset":
+		case "ZSET":
 			err = copySortedSet(key, src, dst)
 			if err != nil {
 				return err
 			}
-		case "hash":
+		case "HASH":
 			err = copyHash(key, src, dst)
 			if err != nil {
 				return err

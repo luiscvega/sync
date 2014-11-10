@@ -66,7 +66,7 @@ func TestSync(t *testing.T) {
 	expectedHash, _ := convertToMap(src.Do("HGETALL", "hash"))
 	actualHash, _ := convertToMap(dst.Do("HGETALL", "hash"))
 	if !reflect.DeepEqual(expectedHash, actualHash) {
-		t.Error("Failed sync for TYPE 'hash'")
+		t.Error("Failed sync for TYPE 'HASH'")
 	}
 }
 
