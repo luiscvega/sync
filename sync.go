@@ -8,7 +8,10 @@ import (
 )
 
 func Sync(src, dst redis.Conn) (err error) {
-	keys, _ := redis.Strings(src.Do("KEYS", "*"))
+	keys, err := redis.Strings(src.Do("KEYS", "*"))
+	if err != nil {
+		return err
+	}
 
 	// Begin transaction
 	err = dst.Send("MULTI")
