@@ -13,7 +13,7 @@ func Sync(src, dst redis.Conn) (err error) {
 	for _, key := range keys {
 		fmt.Printf("-----> %s\n", key)
 
-		t, err := src.Do("TYPE", key)
+		t, err := redis.String(src.Do("TYPE", key))
 		if err != nil {
 			return err
 		}
